@@ -412,6 +412,7 @@ const removeScreen = () => {
   screenUrls.value = [];
 };
 const getVideoScreenshot = () => {
+  stopKeyboard;
   const canvas = document.createElement('canvas');
   const canvasCtx = canvas.getContext('2d');
   const video = document.getElementById('scrcpy-video');
@@ -531,7 +532,7 @@ const getWifiList = () => {
   terminalWebsocket.send(
     JSON.stringify({
       type: 'wifiList',
-    })
+    }),
   );
 };
 const clearLogcat = () => {

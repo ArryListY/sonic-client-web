@@ -3,7 +3,7 @@ import { onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
 import Header from '@/components/Header.vue';
-import defaultLogo from '@/assets/logo.png';
+import defaultLogo from '@/assets/5inch-pos.png';
 
 import { useI18n } from 'vue-i18n';
 

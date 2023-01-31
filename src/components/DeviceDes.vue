@@ -102,7 +102,7 @@ const reboot = (id) => {
 const getPhoneImg = (name, url) => {
   let result;
   if (url === null || !url || (url && url.length === 0)) {
-    result = img['./../assets/img/default.png'].default;
+    result = img['./../assets/img/5inch-pos.png'].default;
   } else {
     result = url;
   }

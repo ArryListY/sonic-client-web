@@ -14,9 +14,9 @@ import { localeList } from '@/config/locale';
 import useLocale from '@/locales/useLocale';
 import { useI18n } from 'vue-i18n';
 import useClipboard from 'vue-clipboard3';
-import defaultLogo from '../assets/logo.png';
+import defaultLogo from '../assets/img/5inch-pos.png';
 import ProjectUpdate from './ProjectUpdate.vue';
-import logo from '../assets/logo.png';
+import logo from '../assets/img/5inch-pos.png';
 import axios from '../http/axios';
 
 const { toClipboard } = useClipboard();
