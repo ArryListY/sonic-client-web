@@ -99,6 +99,7 @@ const manufacturer = ref([
   'Lenovo',
   'HMD Global',
   'Teclast',
+  'Wiseasy',
 ]);
 const statusList = ref([
   {
