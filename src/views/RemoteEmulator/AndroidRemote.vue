@@ -107,6 +107,7 @@ const screenUrls = ref([]);
 const uploadUrl = ref('');
 const text = ref({ content: '' });
 const isMultiWindows = ref(false);
+const isIgnore = ref(true);
 const isVisible = ref(false);
 let imgWidth = 0;
 let imgHeight = 0;
@@ -803,14 +804,16 @@ const websocketOnmessage = (message) => {
       break;
     }
     case 'openDriver': {
-      ElMessage({
-        type: JSON.parse(message.data).status,
-        message: JSON.parse(message.data).detail,
-      });
+      let msg = $t('androidRemoteTS.driverStatus.fail');
       driverLoading.value = false;
       if (JSON.parse(message.data).status === 'success') {
         isDriverFinish.value = true;
+        msg = $t('androidRemoteTS.driverStatus.success');
       }
+      ElMessage({
+        type: JSON.parse(message.data).status,
+        message: msg,
+      });
       break;
     }
     case 'step': {
@@ -840,7 +843,7 @@ const websocketOnmessage = (message) => {
         imgElementUrl.value = JSON.parse(message.data).img;
         dialogImgElement.value = true;
       } else {
-        ElMessage.error(JSON.parse(message.data).errMsg);
+        ElMessage.error($t('IOSRemote.eleScreen.err'));
       }
       elementScreenLoading.value = false;
       break;
@@ -1519,6 +1522,7 @@ const getElement = () => {
       type: 'debug',
       detail: 'tree',
       isMulti: isMultiWindows.value,
+      isIgnore: isIgnore.value,
       isVisible: isVisible.value,
     })
   );
@@ -1651,7 +1655,28 @@ onMounted(() => {
   }
   getDeviceById(route.params.deviceId);
   store.commit('autoChangeCollapse');
+  getRemoteTimeout();
 });
+const remoteTimeout = ref(0);
+const getRemoteTimeout = () => {
+  axios.get('/controller/confList/getRemoteTimeout').then((resp) => {
+    remoteTimeout.value = resp.data * 60;
+    setInterval(() => {
+      remoteTimeout.value -= 1;
+    }, 1000);
+  });
+};
+function parseTimeout(time) {
+  let h = parseInt((time / 60 / 60) % 24);
+  h = h < 10 ? `0${h}` : h;
+  let m = parseInt((time / 60) % 60);
+  m = m < 10 ? `0${m}` : m;
+  let s = parseInt(time % 60);
+  s = s < 10 ? `0${s}` : s;
+  return `${h} ${$t('common.hour')} ${m} ${$t('common.min')} ${s} ${$t(
+    'common.sec'
+  )} `;
+}
 </script>
 
 <template>
@@ -1710,7 +1735,13 @@ onMounted(() => {
     />
   </el-dialog>
   <el-page-header
-    :content="$t('routes.remoteControl')"
+    :content="
+      $t('routes.remoteControl') +
+      ' - ' +
+      $t('common.at') +
+      parseTimeout(remoteTimeout) +
+      $t('common.release')
+    "
     style="margin-top: 15px; margin-left: 20px"
     @back="close"
   />
@@ -2411,7 +2442,7 @@ onMounted(() => {
                   </el-alert>
                   <div style="text-align: center; margin-top: 12px">
                     <el-button size="mini" type="primary" @click="sendText"
-                      >{{ $t('androidRemoteTS.code.send') }}
+                      >{{ $t('androidRemoteTS.code.clear') }}
                     </el-button>
                     <el-button size="mini" type="primary" @click="startKeyboard"
                       >{{ $t('androidRemoteTS.code.startKeyboard') }}
@@ -2683,7 +2714,7 @@ onMounted(() => {
             </el-row>
             <el-card shadow="hover" style="margin-top: 15px">
               <el-table :data="currAppListPageData" border>
-                <el-table-column width="90" header-align="center">
+                <el-table-column width="100" header-align="center">
                   <template #header>
                     <el-button size="mini" @click="refreshAppList"
                       >{{ $t('androidRemoteTS.code.refresh') }}
@@ -3248,16 +3279,46 @@ onMounted(() => {
                   >
                     <div>
                       <el-select v-model="isMultiWindows" size="mini">
-                        <el-option label="单窗口模式" :value="false" />
-                        <el-option label="多窗口模式" :value="true" />
+                        <el-option
+                          :label="$t('androidRemoteTS.element.windows.single')"
+                          :value="false"
+                        />
+                        <el-option
+                          :label="$t('androidRemoteTS.element.windows.multi')"
+                          :value="true"
+                        />
                       </el-select>
                       <el-select
                         v-model="isVisible"
                         style="margin-left: 10px"
                         size="mini"
                       >
-                        <el-option label="隐藏Invisible控件" :value="false" />
-                        <el-option label="显示Invisible控件" :value="true" />
+                        <el-option
+                          :label="$t('androidRemoteTS.element.visible.hid')"
+                          :value="false"
+                        />
+                        <el-option
+                          :label="$t('androidRemoteTS.element.visible.show')"
+                          :value="true"
+                        />
+                      </el-select>
+                      <el-select
+                        v-model="isIgnore"
+                        style="margin-left: 10px"
+                        size="mini"
+                      >
+                        <el-option
+                          :label="
+                            $t('androidRemoteTS.element.unimportant.ignore')
+                          "
+                          :value="true"
+                        />
+                        <el-option
+                          :label="
+                            $t('androidRemoteTS.element.unimportant.show')
+                          "
+                          :value="false"
+                        />
                       </el-select>
                       <el-button
                         style="margin-left: 10px"
@@ -3623,7 +3684,9 @@ onMounted(() => {
                                 <span>{{ elementDetail['index'] }}</span>
                               </el-form-item>
                               <el-form-item
-                                :label="$t('androidRemoteTS.code.label.one')"
+                                :label="
+                                  $t('androidRemoteTS.code.label.checkable')
+                                "
                               >
                                 <el-switch
                                   :value="
@@ -3634,7 +3697,9 @@ onMounted(() => {
                                 </el-switch>
                               </el-form-item>
                               <el-form-item
-                                :label="$t('androidRemoteTS.code.label.two')"
+                                :label="
+                                  $t('androidRemoteTS.code.label.checked')
+                                "
                               >
                                 <el-switch
                                   :value="JSON.parse(elementDetail['checked'])"
@@ -3643,7 +3708,9 @@ onMounted(() => {
                                 </el-switch>
                               </el-form-item>
                               <el-form-item
-                                :label="$t('androidRemoteTS.code.label.three')"
+                                :label="
+                                  $t('androidRemoteTS.code.label.clickable')
+                                "
                               >
                                 <el-switch
                                   :value="
@@ -3654,7 +3721,9 @@ onMounted(() => {
                                 </el-switch>
                               </el-form-item>
                               <el-form-item
-                                :label="$t('androidRemoteTS.code.label.four')"
+                                :label="
+                                  $t('androidRemoteTS.code.label.selected')
+                                "
                               >
                                 <el-switch
                                   :value="JSON.parse(elementDetail['selected'])"
@@ -3663,7 +3732,9 @@ onMounted(() => {
                                 </el-switch>
                               </el-form-item>
                               <el-form-item
-                                :label="$t('androidRemoteTS.code.label.five')"
+                                :label="
+                                  $t('androidRemoteTS.code.label.displayed')
+                                "
                               >
                                 <el-switch
                                   :value="
@@ -3674,7 +3745,9 @@ onMounted(() => {
                                 </el-switch>
                               </el-form-item>
                               <el-form-item
-                                :label="$t('androidRemoteTS.code.label.six')"
+                                :label="
+                                  $t('androidRemoteTS.code.label.enabled')
+                                "
                               >
                                 <el-switch
                                   :value="JSON.parse(elementDetail['enabled'])"
@@ -3683,7 +3756,9 @@ onMounted(() => {
                                 </el-switch>
                               </el-form-item>
                               <el-form-item
-                                :label="$t('androidRemoteTS.code.label.seven')"
+                                :label="
+                                  $t('androidRemoteTS.code.label.focusable')
+                                "
                               >
                                 <el-switch
                                   :value="
@@ -3694,7 +3769,9 @@ onMounted(() => {
                                 </el-switch>
                               </el-form-item>
                               <el-form-item
-                                :label="$t('androidRemoteTS.code.label.eight')"
+                                :label="
+                                  $t('androidRemoteTS.code.label.focused')
+                                "
                               >
                                 <el-switch
                                   :value="JSON.parse(elementDetail['focused'])"
@@ -3703,7 +3780,9 @@ onMounted(() => {
                                 </el-switch>
                               </el-form-item>
                               <el-form-item
-                                :label="$t('androidRemoteTS.code.label.nine')"
+                                :label="
+                                  $t('androidRemoteTS.code.label.longClickable')
+                                "
                               >
                                 <el-switch
                                   :value="
@@ -3714,7 +3793,9 @@ onMounted(() => {
                                 </el-switch>
                               </el-form-item>
                               <el-form-item
-                                :label="$t('androidRemoteTS.code.label.ten')"
+                                :label="
+                                  $t('androidRemoteTS.code.label.scrollable')
+                                "
                               >
                                 <el-switch
                                   :value="

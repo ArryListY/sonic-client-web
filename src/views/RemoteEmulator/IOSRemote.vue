@@ -748,11 +748,9 @@ const websocketOnmessage = (message) => {
       break;
     }
     case 'openDriver': {
-      ElMessage({
-        type: JSON.parse(message.data).status,
-        message: JSON.parse(message.data).detail,
-      });
+      let msg = $t('IOSRemote.driverStatus.fail');
       if (JSON.parse(message.data).status === 'success') {
+        msg = $t('IOSRemote.driverStatus.success');
         imgWidth = JSON.parse(message.data).width;
         imgHeight = JSON.parse(message.data).height;
         isDriverFinish.value = true;
@@ -763,6 +761,10 @@ const websocketOnmessage = (message) => {
           JSON.parse(message.data).height
         );
       }
+      ElMessage({
+        type: JSON.parse(message.data).status,
+        message: msg,
+      });
       break;
     }
     case 'step': {
@@ -784,7 +786,7 @@ const websocketOnmessage = (message) => {
         imgElementUrl.value = JSON.parse(message.data).img;
         dialogImgElement.value = true;
       } else {
-        ElMessage.error(JSON.parse(message.data).errMsg);
+        ElMessage.error($t('IOSRemote.eleScreen.err'));
       }
       elementScreenLoading.value = false;
       break;
@@ -1220,7 +1222,28 @@ onMounted(() => {
   }
   getDeviceById(route.params.deviceId);
   store.commit('autoChangeCollapse');
+  getRemoteTimeout();
 });
+const remoteTimeout = ref(0);
+const getRemoteTimeout = () => {
+  axios.get('/controller/confList/getRemoteTimeout').then((resp) => {
+    remoteTimeout.value = resp.data * 60;
+    setInterval(() => {
+      remoteTimeout.value -= 1;
+    }, 1000);
+  });
+};
+function parseTimeout(time) {
+  let h = parseInt((time / 60 / 60) % 24);
+  h = h < 10 ? `0${h}` : h;
+  let m = parseInt((time / 60) % 60);
+  m = m < 10 ? `0${m}` : m;
+  let s = parseInt(time % 60);
+  s = s < 10 ? `0${s}` : s;
+  return `${h} ${$t('common.hour')} ${m} ${$t('common.min')} ${s} ${$t(
+    'common.sec'
+  )} `;
+}
 </script>
 
 <template>
@@ -1279,7 +1302,13 @@ onMounted(() => {
     />
   </el-dialog>
   <el-page-header
-    :content="$t('routes.remoteControl')"
+    :content="
+      $t('routes.remoteControl') +
+      ' - ' +
+      $t('common.at') +
+      parseTimeout(remoteTimeout) +
+      $t('common.release')
+    "
     style="margin-top: 15px; margin-left: 20px"
     @back="close"
   />
@@ -1671,16 +1700,14 @@ onMounted(() => {
                   <template #header>
                     <strong>{{ $t('IOSRemote.siri.command') }}</strong>
                   </template>
-                  <el-form size="small" :model="text" style="padding: 12px 0">
-                    <el-form-item>
-                      <el-input
-                        v-model="text.content"
-                        clearable
-                        size="small"
-                        :placeholder="$t('IOSRemote.siri.inputCommand')"
-                      ></el-input>
-                    </el-form-item>
-                    <div style="text-align: center">
+                  <div style="padding: 12px 0">
+                    <el-input
+                      v-model="text.content"
+                      clearable
+                      size="small"
+                      :placeholder="$t('IOSRemote.siri.inputCommand')"
+                    ></el-input>
+                    <div style="text-align: center; margin-top: 15px">
                       <el-button
                         size="mini"
                         type="primary"
@@ -1688,7 +1715,7 @@ onMounted(() => {
                         >{{ $t('androidRemoteTS.code.send') }}
                       </el-button>
                     </div>
-                  </el-form>
+                  </div>
                 </el-card>
               </el-col>
               <el-col :span="12">
@@ -1901,7 +1928,7 @@ onMounted(() => {
             </el-row>
             <el-card shadow="hover" style="margin-top: 15px">
               <el-table :data="currAppListPageData" border>
-                <el-table-column width="90" header-align="center">
+                <el-table-column width="100" header-align="center">
                   <template #header>
                     <el-button size="mini" @click="refreshAppList"
                       >{{ $t('androidRemoteTS.code.refresh') }}
@@ -2803,18 +2830,14 @@ onMounted(() => {
                               <el-form-item label="index">
                                 <span>{{ elementDetail['index'] }}</span>
                               </el-form-item>
-                              <el-form-item
-                                :label="$t('androidRemoteTS.code.label.six')"
-                              >
+                              <el-form-item label="enabled">
                                 <el-switch
                                   :value="JSON.parse(elementDetail['enabled'])"
                                   disabled
                                 >
                                 </el-switch>
                               </el-form-item>
-                              <el-form-item
-                                :label="$t('androidRemoteTS.code.label.five')"
-                              >
+                              <el-form-item label="visible">
                                 <el-switch
                                   :value="JSON.parse(elementDetail['visible'])"
                                   disabled
