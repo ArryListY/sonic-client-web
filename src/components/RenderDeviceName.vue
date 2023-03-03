@@ -13,8 +13,8 @@ const props = defineProps({
       ? device['nickName']
       : device['chiName'] && device['chiName'].length > 0
       ? device['chiName']
-      : device['model'] && device['model'].length > 0
-      ? device['model']
+      : device['name'] && device['name'].length > 0
+      ? device['name']
       : $t('form.unknown')
   }}</span>
 </template>

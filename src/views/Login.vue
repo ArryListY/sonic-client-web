@@ -7,7 +7,7 @@ import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
 import axios from '../http/axios';
 import logoT from '../assets/logo.png';
-import logo from '../assets/img/logo2.png';
+import logo from '../assets/img/Wiseasy.jpg';
 import background from '../assets/img/background.svg';
 
 const { t: $t } = useI18n();
